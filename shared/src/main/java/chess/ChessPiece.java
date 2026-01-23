@@ -54,12 +54,13 @@ public class ChessPiece {
      * @return Collection of valid moves
      */
     public Collection<ChessMove> pieceMoves(ChessBoard board, ChessPosition myPosition) {
-        ChessPiece piece = board.getPiece(myPosition);
-        if (piece.getPieceType() == PieceType.BISHOP) {
-            PieceMovesCalculator calc = new BishopMovesCalculator();
-            return calc.pieceMoves(board, myPosition);
-        }
-        return List.of();
+        PieceMovesCalculator calc = switch (board.getPiece(myPosition).getPieceType()) {
+            case BISHOP -> new BishopMovesCalculator();
+            case KING -> new KingMovesCalculator();
+            default -> throw new RuntimeException("you didnt implement it yet lol");
+        };
+
+        return calc.pieceMoves(board, myPosition);
     }
 
     @Override
