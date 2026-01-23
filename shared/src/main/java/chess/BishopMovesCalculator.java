@@ -18,11 +18,9 @@ public class BishopMovesCalculator implements PieceMovesCalculator {
 
     private void bishopMovesHelper(ChessBoard board, ChessPosition myPosition, Collection<ChessMove> moves,
                                    int verticalChange, int horizontalChange) {
-        int row = myPosition.getRow();
-        int col = myPosition.getColumn();
-        while (row < 8 && row > 1 && col < 8 && col > 1) {
-            row += verticalChange;
-            col += horizontalChange;
+        int row = myPosition.getRow() + verticalChange;
+        int col = myPosition.getColumn() + horizontalChange;
+        while (board.isOnBoard(row, col)) {
             ChessPosition endPosition = new ChessPosition(row, col);
             ChessPiece target = board.getPiece(endPosition);
             if (target != null) {
@@ -32,6 +30,8 @@ public class BishopMovesCalculator implements PieceMovesCalculator {
                 break;
             }
             moves.add(new ChessMove(myPosition, endPosition, null));
+            row += verticalChange;
+            col += horizontalChange;
         }
     }
 }

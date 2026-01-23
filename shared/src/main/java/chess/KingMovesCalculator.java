@@ -13,8 +13,10 @@ public class KingMovesCalculator implements PieceMovesCalculator {
         int col = myPosition.getColumn();
         for (int i = -1; i <= 1; i++) {
             for (int j = -1; j <= 1; j++) {
-                ChessPosition endPosition = new ChessPosition(row+i, col+j);
-                if (board.isOnBoard(endPosition)) {
+                int endRow = row+i;
+                int endCol = col+j;
+                if (board.isOnBoard(endRow, endCol)) {
+                    ChessPosition endPosition = new ChessPosition(endRow, endCol);
                     ChessPiece target = board.getPiece(endPosition);
                     if (target == null) {
                         moves.add(new ChessMove(myPosition, endPosition, null));
