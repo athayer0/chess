@@ -57,6 +57,7 @@ public class ChessPiece {
         PieceMovesCalculator calc = switch (board.getPiece(myPosition).getPieceType()) {
             case BISHOP -> new BishopMovesCalculator();
             case KING -> new KingMovesCalculator();
+            case KNIGHT -> new KnightMovesCalculator();
             default -> throw new RuntimeException("you didnt implement it yet lol");
         };
 
