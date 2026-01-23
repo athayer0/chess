@@ -45,6 +45,12 @@ public class ChessBoard {
         throw new RuntimeException("Not implemented");
     }
 
+    public boolean isOnBoard(ChessPosition position) {
+        int row = position.getRow();
+        int col = position.getColumn();
+        return row >= 1 && row <= 8 && col >= 1 && col <= 8;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {
