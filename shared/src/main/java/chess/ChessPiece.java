@@ -58,6 +58,8 @@ public class ChessPiece {
             case BISHOP -> new BishopMovesCalculator();
             case KING -> new KingMovesCalculator();
             case KNIGHT -> new KnightMovesCalculator();
+            case ROOK -> new RookMovesCalculator();
+            case QUEEN -> new QueenMovesCalculator();
             default -> throw new RuntimeException("you didnt implement it yet lol");
         };
 
