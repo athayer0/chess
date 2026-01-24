@@ -60,6 +60,7 @@ public class ChessPiece {
             case KNIGHT -> new KnightMovesCalculator();
             case ROOK -> new RookMovesCalculator();
             case QUEEN -> new QueenMovesCalculator();
+            case PAWN -> new PawnMovesCalculator();
             default -> throw new RuntimeException("you didnt implement it yet lol");
         };
 
