@@ -73,7 +73,22 @@ public class ChessGame {
      * @return True if the specified team is in check
      */
     public boolean isInCheck(TeamColor team) {
-        throw new RuntimeException("Not implemented");
+        ChessPosition kingPosition = kingFinder(team);
+        for (int i = 1; i <= 8; i++) {
+            for (int j = 1; j <= 8; j++) {
+                ChessPosition square = new ChessPosition(i, j);
+                ChessPiece piece = chessBoard.getPiece(square);
+                if (piece != null && piece.getTeamColor() != team) {
+                    Collection<ChessMove> moves = piece.pieceMoves(chessBoard, square);
+                    for (ChessMove move : moves) {
+                        if (move.getEndPosition() == kingPosition) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -97,12 +112,13 @@ public class ChessGame {
         throw new RuntimeException("Not implemented");
     }
 
-    private ChessPiece kingFinder(TeamColor team) {
+    private ChessPosition kingFinder(TeamColor team) {
         for (int i = 1; i <= 8; i++) {
             for (int j = 1; j <= 8; j++) {
-                ChessPiece piece = chessBoard.getPiece(new ChessPosition(i, j));
-                if (piece.getPieceType() == ChessPiece.PieceType.KING && piece.getTeamColor() == team) {
-                    return piece;
+                ChessPosition square = new ChessPosition(i, j);
+                ChessPiece piece = chessBoard.getPiece(square);
+                if (piece != null && piece.getPieceType() == ChessPiece.PieceType.KING && piece.getTeamColor() == team) {
+                    return square;
                 }
             }
         }
