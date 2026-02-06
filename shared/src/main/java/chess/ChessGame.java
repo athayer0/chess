@@ -97,6 +97,18 @@ public class ChessGame {
         throw new RuntimeException("Not implemented");
     }
 
+    private ChessPiece kingFinder(TeamColor team) {
+        for (int i = 1; i <= 8; i++) {
+            for (int j = 1; j <= 8; j++) {
+                ChessPiece piece = chessBoard.getPiece(new ChessPosition(i, j));
+                if (piece.getPieceType() == ChessPiece.PieceType.KING && piece.getTeamColor() == team) {
+                    return piece;
+                }
+            }
+        }
+        throw new RuntimeException("couldnt find king");
+    }
+
     /**
      * Sets this game's chessboard with a given board
      *
