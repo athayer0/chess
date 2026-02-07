@@ -61,7 +61,7 @@ public class ChessPiece {
             case ROOK -> new RookMovesCalculator();
             case QUEEN -> new QueenMovesCalculator();
             case PAWN -> new PawnMovesCalculator();
-            default -> throw new RuntimeException("you didnt implement it yet lol");
+            default -> throw new RuntimeException("you didn't implement it yet lol");
         };
 
         return calc.pieceMoves(board, myPosition);

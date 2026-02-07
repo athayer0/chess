@@ -51,7 +51,17 @@ public class ChessGame {
      */
     public Collection<ChessMove> validMoves(ChessPosition startPosition) {
         ChessPiece piece = chessBoard.getPiece(startPosition);
-        return piece.pieceMoves(chessBoard, startPosition);
+        Collection<ChessMove> moves = piece.pieceMoves(chessBoard, startPosition);
+        for (ChessMove move : moves) {
+            ChessBoard ghostBoard = chessBoard;
+            ChessPosition endPosition = move.getEndPosition();
+            ghostBoard.addPiece(endPosition, ghostBoard.getPiece(startPosition));
+            ghostBoard.addPiece(startPosition, null);
+            if (isInCheck(piece.getTeamColor())) {
+                moves.remove(move);
+            }
+        }
+        return moves;
     }
 
     /**
@@ -68,6 +78,7 @@ public class ChessGame {
         }
         ChessPosition endPosition = move.getEndPosition();
         chessBoard.addPiece(endPosition, chessBoard.getPiece(startPosition));
+        chessBoard.addPiece(startPosition, null);
     }
 
     /**
@@ -126,7 +137,7 @@ public class ChessGame {
                 }
             }
         }
-        throw new RuntimeException("couldnt find king");
+        throw new RuntimeException("couldn't find king");
     }
 
     /**
