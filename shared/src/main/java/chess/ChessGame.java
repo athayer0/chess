@@ -1,5 +1,6 @@
 package chess;
 
+import java.text.CollationElementIterator;
 import java.util.Collection;
 import java.util.Objects;
 
@@ -129,7 +130,22 @@ public class ChessGame {
      * @return True if the specified team is in stalemate, otherwise false
      */
     public boolean isInStalemate(TeamColor team) {
-        throw new RuntimeException("Not implemented");
+        if (!isInCheck(team)) {
+            for (int i = 1; i <= 8; i++) {
+                for (int j = 1; j <= 8; j++) {
+                    ChessPosition square = new ChessPosition(i, j);
+                    ChessPiece piece = chessBoard.getPiece(square);
+                    if (piece != null && piece.getTeamColor() == team) {
+                        Collection<ChessMove> moves = validMoves(square);
+                        if (!moves.isEmpty()) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     private ChessPosition kingFinder(TeamColor team) {
