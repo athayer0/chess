@@ -1,6 +1,5 @@
 package chess;
 
-import java.text.CollationElementIterator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
@@ -53,8 +52,11 @@ public class ChessGame {
      */
     public Collection<ChessMove> validMoves(ChessPosition startPosition) {
         ChessPiece piece = chessBoard.getPiece(startPosition);
-        Collection<ChessMove> possibleMoves = piece.pieceMoves(chessBoard, startPosition);
         Collection<ChessMove> goodMoves = new ArrayList<>();
+        if (piece == null) {
+            return goodMoves;
+        }
+        Collection<ChessMove> possibleMoves = piece.pieceMoves(chessBoard, startPosition);
         for (ChessMove possibleMove : possibleMoves) {
             ChessPosition endPosition = possibleMove.getEndPosition();
             ChessPiece target = chessBoard.getPiece(endPosition);
@@ -135,9 +137,19 @@ public class ChessGame {
      */
     public boolean isInCheckmate(TeamColor team) {
         if (isInCheck(team)) {
-            ChessPosition kingPosition = kingFinder(team);
-            Collection<ChessMove> kingMoves = validMoves(kingPosition);
-            return kingMoves.isEmpty();
+            for (int i = 1; i <= 8; i++) {
+                for (int j = 1; j <= 8; j++) {
+                    ChessPosition square = new ChessPosition(i, j);
+                    ChessPiece piece = chessBoard.getPiece(square);
+                    if (piece != null && piece.getTeamColor() == team) {
+                        Collection<ChessMove> moves = validMoves(square);
+                        if (!moves.isEmpty()) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
         }
         return false;
     }
