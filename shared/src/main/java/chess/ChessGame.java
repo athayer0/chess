@@ -1,6 +1,7 @@
 package chess;
 
 import java.text.CollationElementIterator;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
 
@@ -52,17 +53,20 @@ public class ChessGame {
      */
     public Collection<ChessMove> validMoves(ChessPosition startPosition) {
         ChessPiece piece = chessBoard.getPiece(startPosition);
-        Collection<ChessMove> moves = piece.pieceMoves(chessBoard, startPosition);
-        for (ChessMove move : moves) {
-            ChessBoard ghostBoard = chessBoard;
-            ChessPosition endPosition = move.getEndPosition();
-            ghostBoard.addPiece(endPosition, ghostBoard.getPiece(startPosition));
-            ghostBoard.addPiece(startPosition, null);
-            if (isInCheck(piece.getTeamColor())) {
-                moves.remove(move);
+        Collection<ChessMove> possibleMoves = piece.pieceMoves(chessBoard, startPosition);
+        Collection<ChessMove> goodMoves = new ArrayList<>();
+        for (ChessMove possibleMove : possibleMoves) {
+            ChessPosition endPosition = possibleMove.getEndPosition();
+            ChessPiece target = chessBoard.getPiece(endPosition);
+            chessBoard.addPiece(endPosition, piece);
+            chessBoard.addPiece(startPosition, null);
+            if (!isInCheck(piece.getTeamColor())) {
+                goodMoves.add(possibleMove);
             }
+            chessBoard.addPiece(endPosition, target);
+            chessBoard.addPiece(startPosition, piece);
         }
-        return moves;
+        return goodMoves;
     }
 
     /**
@@ -75,11 +79,27 @@ public class ChessGame {
         ChessPosition startPosition = move.getStartPosition();
         Collection<ChessMove> goodMoves = validMoves(startPosition);
         if (!goodMoves.contains(move)) {
-            throw new InvalidMoveException();
+            throw new InvalidMoveException("invalid move");
         }
         ChessPosition endPosition = move.getEndPosition();
-        chessBoard.addPiece(endPosition, chessBoard.getPiece(startPosition));
-        chessBoard.addPiece(startPosition, null);
+        ChessPiece piece = chessBoard.getPiece(startPosition);
+
+        if (piece == null || piece.getTeamColor() != teamColor) {
+            throw new InvalidMoveException("you don't have a piece there");
+        } else {
+            if (piece.getPieceType() == ChessPiece.PieceType.PAWN && (endPosition.getRow() == 1 || endPosition.getRow() == 8)) {
+                chessBoard.addPiece(endPosition, new ChessPiece(teamColor, move.getPromotionPiece()));
+            } else {
+                chessBoard.addPiece(endPosition, piece);
+            }
+            chessBoard.addPiece(startPosition, null);
+        }
+
+        if (getTeamTurn() == TeamColor.WHITE) {
+            setTeamTurn(TeamColor.BLACK);
+        } else {
+            setTeamTurn(TeamColor.WHITE);
+        }
     }
 
     /**
