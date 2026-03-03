@@ -25,8 +25,6 @@ public class GameService {
         return new ListGamesResult(games);
     }
 
-    // You may need to import chess.ChessGame at the top of the file!
-
     public CreateGameResult createGame(String authToken, CreateGameRequest req) throws DataAccessException {
         AuthData auth = authDAO.getAuth(authToken);
         if (auth == null) {
@@ -42,5 +40,45 @@ public class GameService {
         gameDAO.createGame(newGame);
 
         return new CreateGameResult(newGameId);
+    }
+
+    public void joinGame(String authToken, JoinGameRequest req) throws DataAccessException {
+        AuthData auth = authDAO.getAuth(authToken);
+        if (auth == null) {
+            throw new UnauthorizedException("Error: unauthorized");
+        }
+
+        GameData game = gameDAO.getGame(req.gameID());
+        if (game == null) {
+            throw new BadRequestException("Error: bad request");
+        }
+
+        String username = auth.username();
+        String newWhite = game.whiteUsername();
+        String newBlack = game.blackUsername();
+
+        if ("WHITE".equals(req.playerColor())) {
+            if (newWhite != null) {
+                throw new AlreadyTakenException("Error: already taken");
+            }
+            newWhite = username;
+        } else if ("BLACK".equals(req.playerColor())) {
+            if (newBlack != null) {
+                throw new AlreadyTakenException("Error: already taken");
+            }
+            newBlack = username;
+        } else {
+            throw new BadRequestException("Error: bad request");
+        }
+
+        GameData updatedGame = new GameData(
+                game.gameID(),
+                newWhite,
+                newBlack,
+                game.gameName(),
+                game.game()
+        );
+
+        gameDAO.updateGame(updatedGame);
     }
 }

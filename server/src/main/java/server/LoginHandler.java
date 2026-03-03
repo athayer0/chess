@@ -28,7 +28,7 @@ public class LoginHandler {
             ctx.status(400);
             ctx.result(gson.toJson(Map.of("message", e.getMessage())));
         } catch (UnauthorizedException e) {
-            ctx.status(401); // 401 Unauthorized
+            ctx.status(401);
             ctx.result(gson.toJson(Map.of("message", e.getMessage())));
         } catch (Exception e) {
             ctx.status(500);

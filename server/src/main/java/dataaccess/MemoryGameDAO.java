@@ -21,4 +21,14 @@ public class MemoryGameDAO implements GameDAO {
     public void createGame(GameData game) {
         games.put(game.gameID(), game);
     }
+
+    @Override
+    public GameData getGame(int gameID) {
+        return games.get(gameID);
+    }
+
+    @Override
+    public void updateGame(GameData game) {
+        games.put(game.gameID(), game);
+    }
 }
