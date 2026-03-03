@@ -3,6 +3,7 @@ package server;
 import dataaccess.*;
 import io.javalin.*;
 import service.ClearService;
+import service.GameService;
 import service.UserService;
 
 public class Server {
@@ -31,6 +32,11 @@ public class Server {
 
         LogoutHandler logoutHandler = new LogoutHandler(userService);
         javalin.delete("/session", logoutHandler::handleRequest);
+
+        GameService gameService = new GameService(gameDAO, authDAO);
+
+        GameHandler gameHandler = new GameHandler(gameService);
+        javalin.get("/game", gameHandler::handleListGames);
     }
 
     public int run(int desiredPort) {
