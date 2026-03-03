@@ -133,19 +133,7 @@ public class ChessGame {
      * @return True if the specified team is in checkmate
      */
     public boolean isInCheckmate(TeamColor team) {
-        if (isInCheck(team)) {
-            for (ChessPosition square : getBoardPositions()) {
-                ChessPiece piece = chessBoard.getPiece(square);
-                if (piece != null && piece.getTeamColor() == team) {
-                    Collection<ChessMove> moves = validMoves(square);
-                    if (!moves.isEmpty()) {
-                        return false;
-                    }
-                }
-            }
-            return true;
-        }
-        return false;
+        return isInCheck(team) && outOfMoves(team);
     }
 
     /**
@@ -156,19 +144,7 @@ public class ChessGame {
      * @return True if the specified team is in stalemate, otherwise false
      */
     public boolean isInStalemate(TeamColor team) {
-        if (!isInCheck(team)) {
-            for (ChessPosition square : getBoardPositions()) {
-                ChessPiece piece = chessBoard.getPiece(square);
-                if (piece != null && piece.getTeamColor() == team) {
-                    Collection<ChessMove> moves = validMoves(square);
-                    if (!moves.isEmpty()) {
-                        return false;
-                    }
-                }
-            }
-            return true;
-        }
-        return false;
+        return !isInCheck(team) && outOfMoves(team);
     }
 
     private ChessPosition kingFinder(TeamColor team) {
@@ -189,6 +165,19 @@ public class ChessGame {
             }
         }
         return positions;
+    }
+
+    private boolean outOfMoves(TeamColor team) {
+        for (ChessPosition square : getBoardPositions()) {
+            ChessPiece piece = chessBoard.getPiece(square);
+            if (piece != null && piece.getTeamColor() == team) {
+                Collection<ChessMove> moves = validMoves(square);
+                if (!moves.isEmpty()) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /**
