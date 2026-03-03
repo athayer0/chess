@@ -5,7 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 
 public class MemoryGameDAO implements GameDAO {
-    private final HashMap<String, GameData> games = new HashMap<>();
+    private final HashMap<Integer, GameData> games = new HashMap<>();
 
     @Override
     public void clear() {
@@ -15,5 +15,10 @@ public class MemoryGameDAO implements GameDAO {
     @Override
     public Collection<GameData> getGames() {
         return games.values(); // Returns all the GameData objects in the map
+    }
+
+    @Override
+    public void createGame(GameData game) {
+        games.put(game.gameID(), game);
     }
 }

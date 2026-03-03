@@ -52,7 +52,6 @@ public class UserService {
 
     public void logout(LogoutRequest req) throws DataAccessException {
         AuthData auth = authDAO.getAuth(req.authToken());
-
         if (auth == null) {
             throw new UnauthorizedException("Error: unauthorized");
         }
