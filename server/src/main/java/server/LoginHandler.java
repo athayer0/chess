@@ -1,6 +1,7 @@
 package server;
 
 import com.google.gson.Gson;
+import dataaccess.BadRequestException;
 import dataaccess.UnauthorizedException;
 import service.LoginRequest;
 import service.LoginResult;
@@ -18,16 +19,14 @@ public class LoginHandler {
     public void handleRequest(Context ctx) {
         Gson gson = new Gson();
         try {
-            // 1. Parse JSON from the request body
             LoginRequest req = gson.fromJson(ctx.body(), LoginRequest.class);
-
-            // 2. Call the service
             LoginResult result = service.login(req);
-
-            // 3. Send success response
             ctx.status(200);
             ctx.result(gson.toJson(result));
 
+        } catch (BadRequestException e) {
+            ctx.status(400);
+            ctx.result(gson.toJson(Map.of("message", "Error: " + e.getMessage())));
         } catch (UnauthorizedException e) {
             ctx.status(401); // 401 Unauthorized
             ctx.result(gson.toJson(Map.of("message", "Error: " + e.getMessage())));
