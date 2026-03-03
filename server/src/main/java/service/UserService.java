@@ -32,4 +32,18 @@ public class UserService {
 
         return new RegisterResult(req.username(), authToken);
     }
+
+    public LoginResult login(LoginRequest req) throws DataAccessException {
+        UserData user = userDAO.getUser(req.username());
+
+        if (user == null || !user.password().equals(req.password())) {
+            throw new UnauthorizedException("Error: unauthorized");
+        }
+
+        String authToken = UUID.randomUUID().toString();
+        AuthData newAuth = new AuthData(authToken, req.username());
+        authDAO.createAuth(newAuth);
+
+        return new LoginResult(req.username(), authToken);
+    }
 }
