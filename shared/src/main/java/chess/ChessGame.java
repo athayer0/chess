@@ -112,16 +112,13 @@ public class ChessGame {
      */
     public boolean isInCheck(TeamColor team) {
         ChessPosition kingPosition = kingFinder(team);
-        for (int i = 1; i <= 8; i++) {
-            for (int j = 1; j <= 8; j++) {
-                ChessPosition square = new ChessPosition(i, j);
-                ChessPiece piece = chessBoard.getPiece(square);
-                if (piece != null && piece.getTeamColor() != team) {
-                    Collection<ChessMove> moves = piece.pieceMoves(chessBoard, square);
-                    for (ChessMove move : moves) {
-                        if (move.getEndPosition().equals(kingPosition)) {
-                            return true;
-                        }
+        for (ChessPosition square : getBoardPositions()) {
+            ChessPiece piece = chessBoard.getPiece(square);
+            if (piece != null && piece.getTeamColor() != team) {
+                Collection<ChessMove> moves = piece.pieceMoves(chessBoard, square);
+                for (ChessMove move : moves) {
+                    if (move.getEndPosition().equals(kingPosition)) {
+                        return true;
                     }
                 }
             }
@@ -137,15 +134,12 @@ public class ChessGame {
      */
     public boolean isInCheckmate(TeamColor team) {
         if (isInCheck(team)) {
-            for (int i = 1; i <= 8; i++) {
-                for (int j = 1; j <= 8; j++) {
-                    ChessPosition square = new ChessPosition(i, j);
-                    ChessPiece piece = chessBoard.getPiece(square);
-                    if (piece != null && piece.getTeamColor() == team) {
-                        Collection<ChessMove> moves = validMoves(square);
-                        if (!moves.isEmpty()) {
-                            return false;
-                        }
+            for (ChessPosition square : getBoardPositions()) {
+                ChessPiece piece = chessBoard.getPiece(square);
+                if (piece != null && piece.getTeamColor() == team) {
+                    Collection<ChessMove> moves = validMoves(square);
+                    if (!moves.isEmpty()) {
+                        return false;
                     }
                 }
             }
@@ -163,15 +157,12 @@ public class ChessGame {
      */
     public boolean isInStalemate(TeamColor team) {
         if (!isInCheck(team)) {
-            for (int i = 1; i <= 8; i++) {
-                for (int j = 1; j <= 8; j++) {
-                    ChessPosition square = new ChessPosition(i, j);
-                    ChessPiece piece = chessBoard.getPiece(square);
-                    if (piece != null && piece.getTeamColor() == team) {
-                        Collection<ChessMove> moves = validMoves(square);
-                        if (!moves.isEmpty()) {
-                            return false;
-                        }
+            for (ChessPosition square : getBoardPositions()) {
+                ChessPiece piece = chessBoard.getPiece(square);
+                if (piece != null && piece.getTeamColor() == team) {
+                    Collection<ChessMove> moves = validMoves(square);
+                    if (!moves.isEmpty()) {
+                        return false;
                     }
                 }
             }
@@ -181,16 +172,23 @@ public class ChessGame {
     }
 
     private ChessPosition kingFinder(TeamColor team) {
-        for (int i = 1; i <= 8; i++) {
-            for (int j = 1; j <= 8; j++) {
-                ChessPosition square = new ChessPosition(i, j);
-                ChessPiece piece = chessBoard.getPiece(square);
-                if (piece != null && piece.getPieceType() == ChessPiece.PieceType.KING && piece.getTeamColor() == team) {
-                    return square;
-                }
+        for (ChessPosition square : getBoardPositions()) {
+            ChessPiece piece = chessBoard.getPiece(square);
+            if (piece != null && piece.getPieceType() == ChessPiece.PieceType.KING && piece.getTeamColor() == team) {
+                return square;
             }
         }
         throw new RuntimeException("couldn't find king");
+    }
+
+    private Collection<ChessPosition> getBoardPositions() {
+        Collection<ChessPosition> positions = new ArrayList<>();
+        for (int i = 1; i <= 8; i++) {
+            for (int j = 1; j <= 8; j++) {
+                positions.add(new ChessPosition(i, j));
+            }
+        }
+        return positions;
     }
 
     /**
