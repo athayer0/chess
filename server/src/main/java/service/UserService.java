@@ -34,12 +34,11 @@ public class UserService {
     }
 
     public LoginResult login(LoginRequest req) throws DataAccessException {
-        UserData user = userDAO.getUser(req.username());
-
         if (req.username() == null || req.password() == null) {
             throw new BadRequestException("Error: bad request");
         }
 
+        UserData user = userDAO.getUser(req.username());
         if (user == null || !user.password().equals(req.password())) {
             throw new UnauthorizedException("Error: unauthorized");
         }
@@ -49,5 +48,15 @@ public class UserService {
         authDAO.createAuth(newAuth);
 
         return new LoginResult(req.username(), authToken);
+    }
+
+    public void logout(LogoutRequest req) throws DataAccessException {
+        AuthData auth = authDAO.getAuth(req.authToken());
+
+        if (auth == null) {
+            throw new UnauthorizedException("Error: unauthorized");
+        }
+
+        authDAO.deleteAuth(req.authToken());
     }
 }

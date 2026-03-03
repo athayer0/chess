@@ -26,10 +26,10 @@ public class LoginHandler {
 
         } catch (BadRequestException e) {
             ctx.status(400);
-            ctx.result(gson.toJson(Map.of("message", "Error: " + e.getMessage())));
+            ctx.result(gson.toJson(Map.of("message", e.getMessage())));
         } catch (UnauthorizedException e) {
             ctx.status(401); // 401 Unauthorized
-            ctx.result(gson.toJson(Map.of("message", "Error: " + e.getMessage())));
+            ctx.result(gson.toJson(Map.of("message", e.getMessage())));
         } catch (Exception e) {
             ctx.status(500);
             ctx.result(gson.toJson(Map.of("message", "Error: " + e.getMessage())));

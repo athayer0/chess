@@ -26,10 +26,10 @@ public class RegisterHandler {
 
         } catch (BadRequestException e) {
             ctx.status(400);
-            ctx.result(gson.toJson(Map.of("message", "Error: " + e.getMessage())));
+            ctx.result(gson.toJson(Map.of("message", e.getMessage())));
         } catch (AlreadyTakenException e) {
             ctx.status(403);
-            ctx.result(gson.toJson(Map.of("message", "Error: " + e.getMessage())));
+            ctx.result(gson.toJson(Map.of("message", e.getMessage())));
         } catch (Exception e) {
             ctx.status(500);
             ctx.result(gson.toJson(Map.of("message", "Error: " + e.getMessage())));
