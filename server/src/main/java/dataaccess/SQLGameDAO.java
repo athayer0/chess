@@ -3,7 +3,6 @@ package dataaccess;
 import chess.ChessGame;
 import com.google.gson.Gson;
 import model.GameData;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -12,7 +11,6 @@ import java.util.Collection;
 public class SQLGameDAO implements GameDAO {
 
     public SQLGameDAO() throws DataAccessException {
-        // Notice we removed AUTO_INCREMENT since your service provides the gameID inside the GameData object
         String createStatement = """
                 CREATE TABLE IF NOT EXISTS game (
                   gameID INT NOT NULL,
