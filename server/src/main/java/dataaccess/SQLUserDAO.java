@@ -8,7 +8,7 @@ public class SQLUserDAO implements UserDAO {
 
     public SQLUserDAO() throws DataAccessException {
         String createStatement = """
-                CREATE TABLE IF NOT EXISTS user (
+                CREATE TABLE IF NOT EXISTS userData (
                   username VARCHAR(255) NOT NULL,
                   password VARCHAR(255) NOT NULL,
                   email VARCHAR(255) NOT NULL,
@@ -25,7 +25,7 @@ public class SQLUserDAO implements UserDAO {
 
     @Override
     public void createUser(UserData u) throws DataAccessException {
-        String statement = "INSERT INTO user (username, password, email) VALUES (?, ?, ?)";
+        String statement = "INSERT INTO userData (username, password, email) VALUES (?, ?, ?)";
         // Hash the password before storing it
         String hashedPassword = BCrypt.hashpw(u.password(), BCrypt.gensalt());
 
@@ -42,7 +42,7 @@ public class SQLUserDAO implements UserDAO {
 
     @Override
     public UserData getUser(String username) throws DataAccessException {
-        String statement = "SELECT username, password, email FROM user WHERE username=?";
+        String statement = "SELECT username, password, email FROM userData WHERE username=?";
         try (var conn = DatabaseManager.getConnection();
              var ps = conn.prepareStatement(statement)) {
             ps.setString(1, username);
@@ -59,7 +59,7 @@ public class SQLUserDAO implements UserDAO {
 
     @Override
     public void clear() throws DataAccessException {
-        String statement = "TRUNCATE TABLE user";
+        String statement = "TRUNCATE TABLE userData";
         try (var conn = DatabaseManager.getConnection();
              var ps = conn.prepareStatement(statement)) {
             ps.executeUpdate();
