@@ -13,6 +13,12 @@ public class Server {
     public Server() {
         javalin = Javalin.create(config -> config.staticFiles.add("web"));
 
+        try {
+            DatabaseManager.createDatabase();
+        } catch (DataAccessException e) {
+            throw new RuntimeException("Unable to start database", e);
+        }
+
         UserDAO userDAO;
         AuthDAO authDAO;
         GameDAO gameDAO;
@@ -54,12 +60,6 @@ public class Server {
     }
 
     public int run(int desiredPort) {
-        try {
-            DatabaseManager.createDatabase();
-        } catch (DataAccessException e) {
-            throw new RuntimeException("Unable to start database", e);
-        }
-
         javalin.start(desiredPort);
         return javalin.port();
     }
