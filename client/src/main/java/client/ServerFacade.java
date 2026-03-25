@@ -2,6 +2,7 @@ package client;
 
 import com.google.gson.Gson;
 import model.AuthData;
+import model.GameData;
 import model.UserData;
 
 import java.io.*;
@@ -17,6 +18,42 @@ public class ServerFacade {
     public AuthData register(UserData user) throws ResponseException {
         var path = "/user";
         return makeRequest("POST", path, user, AuthData.class, null);
+    }
+
+    public AuthData login(UserData user) throws ResponseException {
+        var path = "/session";
+        return makeRequest("POST", path, user, AuthData.class, null);
+    }
+
+    public void logout(String authToken) throws ResponseException {
+        var path = "/session";
+        makeRequest("DELETE", path, null, null, authToken);
+    }
+
+    public GameData[] listGames(String authToken) throws ResponseException {
+        var path = "/game";
+        record ListGamesResponse(GameData[] games) {}
+
+        var response = makeRequest("GET", path, null, ListGamesResponse.class, authToken);
+        return response != null ? response.games() : new GameData[0];
+    }
+
+    public int createGame(String authToken, String gameName) throws ResponseException {
+        var path = "/game";
+        record CreateGameRequest(String gameName) {}
+        record CreateGameResponse(int gameID) {}
+
+        var request = new CreateGameRequest(gameName);
+        var response = makeRequest("POST", path, request, CreateGameResponse.class, authToken);
+        return response.gameID();
+    }
+
+    public void joinGame(String authToken, String playerColor, int gameID) throws ResponseException {
+        var path = "/game";
+        record JoinGameRequest(String playerColor, int gameID) {}
+
+        var request = new JoinGameRequest(playerColor, gameID);
+        makeRequest("PUT", path, request, null, authToken);
     }
 
     public void clear() throws ResponseException {
@@ -63,7 +100,6 @@ public class ServerFacade {
         if (responseClass == null) {
             return null;
         }
-
         try (InputStream respBody = http.getInputStream()) {
             InputStreamReader reader = new InputStreamReader(respBody);
             return new Gson().fromJson(reader, responseClass);
