@@ -139,7 +139,9 @@ public class ChessClient {
                 int actualGameId = cachedGames[gameIndex].gameID();
                 server.joinGame(authData.authToken(), color, actualGameId);
 
-                // TODO: Draw the chessboard here!
+                boolean isWhite = color.equals("WHITE");
+                ui.BoardPrinter.drawBoard(isWhite);
+
                 return String.format("Successfully joined game %d as %s.", gameIndex + 1, color);
 
             } catch (NumberFormatException e) {
@@ -158,7 +160,8 @@ public class ChessClient {
                     return "Invalid game number. Type 'list' to see available games.";
                 }
 
-                // TODO: Draw the chessboard here
+                ui.BoardPrinter.drawBoard(true);
+
                 return String.format("Now observing game %d.", gameIndex + 1);
 
             } catch (NumberFormatException e) {
