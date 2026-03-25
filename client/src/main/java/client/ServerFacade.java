@@ -83,18 +83,7 @@ public class ServerFacade {
             http.connect();
 
             if (http.getResponseCode() >= 400) {
-                String errorMessage = "Server Error: " + http.getResponseCode();
-                try (InputStream errorStream = http.getErrorStream()) {
-                    if (errorStream != null) {
-                        record ErrorResponse(String message) {}
-                        ErrorResponse error = new Gson().fromJson(new InputStreamReader(errorStream), ErrorResponse.class);
-                        if (error != null && error.message() != null) {
-                            errorMessage = error.message();
-                        }
-                    }
-                }
-
-                throw new ResponseException(http.getResponseCode(), errorMessage);
+                throw new ResponseException(http.getResponseCode(), extractErrorMessage(http));
             }
 
             return readBody(http, responseClass);
@@ -105,6 +94,19 @@ public class ServerFacade {
             }
             throw new ResponseException(500, ex.getMessage());
         }
+    }
+
+    private String extractErrorMessage(HttpURLConnection http) throws IOException {
+        try (InputStream errorStream = http.getErrorStream()) {
+            if (errorStream != null) {
+                record ErrorResponse(String message) {}
+                ErrorResponse error = new Gson().fromJson(new InputStreamReader(errorStream), ErrorResponse.class);
+                if (error != null && error.message() != null) {
+                    return error.message();
+                }
+            }
+        }
+        return "Server Error: " + http.getResponseCode();
     }
 
     private <T> T readBody(HttpURLConnection http, Class<T> responseClass) throws IOException {
