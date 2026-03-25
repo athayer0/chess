@@ -1,6 +1,7 @@
 package client;
 
 import model.AuthData;
+import model.GameData;
 import model.UserData;
 import java.util.Arrays;
 
@@ -9,6 +10,7 @@ public class ChessClient {
     private final String serverUrl;
     private State state = State.LOGGED_OUT;
     private AuthData authData = null;
+    private GameData[] cachedGames = null;
 
     public enum State {
         LOGGED_OUT,
@@ -26,8 +28,8 @@ public class ChessClient {
 
     public String eval(String input) {
         try {
-            var tokens = input.toLowerCase().split(" ");
-            var cmd = (tokens.length > 0) ? tokens[0] : "help";
+            var tokens = input.split(" ");
+            var cmd = (tokens.length > 0) ? tokens[0].toLowerCase() : "help";
             var params = Arrays.copyOfRange(tokens, 1, tokens.length);
 
             if (state == State.LOGGED_OUT) {
@@ -98,19 +100,72 @@ public class ChessClient {
     }
 
     private String createGame(String[] params) throws ResponseException {
-        return "Create game not implemented yet.";
+        if (params.length >= 1) {
+            String gameName = String.join(" ", params);
+            server.createGame(authData.authToken(), gameName);
+            return String.format("Game '%s' created successfully.", gameName);
+        }
+        return "Expected: create <NAME>";
     }
 
     private String listGames() throws ResponseException {
-        return "List games not implemented yet.";
+        cachedGames = server.listGames(authData.authToken());
+
+        if (cachedGames == null || cachedGames.length == 0) {
+            return "No games currently exist.";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Current Games:\n");
+        for (int i = 0; i < cachedGames.length; i++) {
+            GameData game = cachedGames[i];
+            sb.append(String.format(" %d. %s\n", i + 1, game.gameName()));
+            sb.append(String.format("    White: %s\n", game.whiteUsername() != null ? game.whiteUsername() : "[Empty]"));
+            sb.append(String.format("    Black: %s\n", game.blackUsername() != null ? game.blackUsername() : "[Empty]"));
+        }
+        return sb.toString();
     }
 
     private String joinGame(String[] params) throws ResponseException {
-        return "Join game not implemented yet.";
+        if (params.length == 2) {
+            try {
+                int gameIndex = Integer.parseInt(params[0]) - 1;
+                String color = params[1].toUpperCase();
+
+                if (cachedGames == null || gameIndex < 0 || gameIndex >= cachedGames.length) {
+                    return "Invalid game number. Type 'list' to see available games.";
+                }
+
+                int actualGameId = cachedGames[gameIndex].gameID();
+                server.joinGame(authData.authToken(), color, actualGameId);
+
+                // TODO: Draw the chessboard here!
+                return String.format("Successfully joined game %d as %s.", gameIndex + 1, color);
+
+            } catch (NumberFormatException e) {
+                return "Expected a number for the game ID.";
+            }
+        }
+        return "Expected: join <ID> [WHITE|BLACK]";
     }
 
     private String observeGame(String[] params) throws ResponseException {
-        return "Observe game not implemented yet.";
+        if (params.length == 1) {
+            try {
+                int gameIndex = Integer.parseInt(params[0]) - 1;
+
+                if (cachedGames == null || gameIndex < 0 || gameIndex >= cachedGames.length) {
+                    return "Invalid game number. Type 'list' to see available games.";
+                }
+
+                // TODO: Draw the chessboard here
+                return String.format("Now observing game %d.", gameIndex + 1);
+
+            } catch (NumberFormatException e) {
+                return "Expected a number for the game ID.";
+            }
+        }
+        return "Expected: observe <ID>";
     }
 
     private String helpPreLogin() {

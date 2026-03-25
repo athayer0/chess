@@ -83,6 +83,16 @@ public class ServerFacade {
             http.connect();
 
             if (http.getResponseCode() >= 400) {
+                try (InputStream errorStream = http.getErrorStream()) {
+                    if (errorStream != null) {
+                        InputStreamReader reader = new InputStreamReader(errorStream);
+                        record ErrorResponse(String message) {}
+                        ErrorResponse error = new Gson().fromJson(reader, ErrorResponse.class);
+                        if (error != null && error.message() != null) {
+                            throw new ResponseException(http.getResponseCode(), error.message());
+                        }
+                    }
+                }
                 throw new ResponseException(http.getResponseCode(), "Server Error: " + http.getResponseCode());
             }
 
