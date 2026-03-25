@@ -16,7 +16,7 @@ public class Repl {
         var result = "";
 
         while (!result.equals("quit")) {
-            System.out.print("\n[LOGGED_OUT] >>> ");
+            System.out.print("[" + client.getState().name() + "] >>> ");
             String line = scanner.nextLine();
 
             try {
