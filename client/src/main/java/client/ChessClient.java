@@ -103,6 +103,9 @@ public class ChessClient {
         if (params.length >= 1) {
             String gameName = String.join(" ", params);
             server.createGame(authData.authToken(), gameName);
+
+            listGames();
+
             return String.format("Game '%s' created successfully.", gameName);
         }
         return "Expected: create <NAME>";
