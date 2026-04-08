@@ -1,20 +1,39 @@
 package client;
 
+import client.websocket.ServerMessageObserver;
+import client.websocket.WebSocketFacade;
+import chess.ChessGame;
+import chess.ChessMove;
+import chess.ChessPosition;
 import model.AuthData;
 import model.GameData;
 import model.UserData;
+import websocket.commands.MakeMoveCommand;
+import websocket.commands.UserGameCommand;
+import websocket.messages.ErrorMessage;
+import websocket.messages.LoadGameMessage;
+import websocket.messages.NotificationMessage;
+import websocket.messages.ServerMessage;
+
 import java.util.Arrays;
 
-public class ChessClient {
+public class ChessClient implements ServerMessageObserver {
     private final ServerFacade server;
     private final String serverUrl;
     private State state = State.LOGGED_OUT;
     private AuthData authData = null;
     private GameData[] cachedGames = null;
 
+    // WebSocket & Game State
+    private WebSocketFacade ws;
+    private int currentGameId = -1;
+    private boolean isWhite = true;
+    private ChessGame currentGame = null;
+
     public enum State {
         LOGGED_OUT,
-        LOGGED_IN
+        LOGGED_IN,
+        IN_GAME
     }
 
     public State getState() {
@@ -32,12 +51,12 @@ public class ChessClient {
             var cmd = (tokens.length > 0) ? tokens[0].toLowerCase() : "help";
             var params = Arrays.copyOfRange(tokens, 1, tokens.length);
 
-            if (state == State.LOGGED_OUT) {
-                return evalPreLogin(cmd, params);
-            } else {
-                return evalPostLogin(cmd, params);
-            }
-        } catch (ResponseException ex) {
+            return switch (state) {
+                case LOGGED_OUT -> evalPreLogin(cmd, params);
+                case LOGGED_IN -> evalPostLogin(cmd, params);
+                case IN_GAME -> evalInGame(cmd, params);
+            };
+        } catch (Exception ex) {
             return ex.getMessage();
         }
     }
@@ -60,6 +79,17 @@ public class ChessClient {
             case "observe" -> observeGame(params);
             case "quit" -> "quit";
             default -> helpPostLogin();
+        };
+    }
+
+    private String evalInGame(String cmd, String[] params) throws Exception {
+        return switch (cmd) {
+            case "redraw" -> redrawBoard();
+            case "leave" -> leaveGame();
+            case "move" -> makeMove(params);
+            case "resign" -> resignGame();
+            // case "highlight" -> highlightMoves(params); // Implement locally for extra credit / full spec
+            default -> helpInGame();
         };
     }
 
@@ -103,9 +133,7 @@ public class ChessClient {
         if (params.length >= 1) {
             String gameName = String.join(" ", params);
             server.createGame(authData.authToken(), gameName);
-
             listGames();
-
             return String.format("Game '%s' created successfully.", gameName);
         }
         return "Expected: create <NAME>";
@@ -139,16 +167,22 @@ public class ChessClient {
                     return "Invalid game number. Type 'list' to see available games.";
                 }
 
-                int actualGameId = cachedGames[gameIndex].gameID();
-                server.joinGame(authData.authToken(), color, actualGameId);
+                currentGameId = cachedGames[gameIndex].gameID();
 
-                boolean isWhite = color.equals("WHITE");
-                ui.BoardPrinter.drawBoard(isWhite);
+                server.joinGame(authData.authToken(), color, currentGameId);
+                isWhite = color.equals("WHITE");
+
+                ws = new WebSocketFacade(serverUrl, this);
+                ws.sendCommand(new UserGameCommand(UserGameCommand.CommandType.CONNECT, authData.authToken(), currentGameId));
+
+                state = State.IN_GAME;
 
                 return String.format("Successfully joined game %d as %s.", gameIndex + 1, color);
 
             } catch (NumberFormatException e) {
                 return "Expected a number for the game ID.";
+            } catch (Exception e) {
+                return "Failed to connect to WebSocket: " + e.getMessage();
             }
         }
         return "Expected: join <ID> [WHITE|BLACK]";
@@ -163,15 +197,106 @@ public class ChessClient {
                     return "Invalid game number. Type 'list' to see available games.";
                 }
 
-                ui.BoardPrinter.drawBoard(true);
+                currentGameId = cachedGames[gameIndex].gameID();
+                isWhite = true;
+
+                ws = new WebSocketFacade(serverUrl, this);
+                ws.sendCommand(new UserGameCommand(UserGameCommand.CommandType.CONNECT, authData.authToken(), currentGameId));
+
+                state = State.IN_GAME;
 
                 return String.format("Now observing game %d.", gameIndex + 1);
 
             } catch (NumberFormatException e) {
                 return "Expected a number for the game ID.";
+            } catch (Exception e) {
+                return "Failed to connect to WebSocket: " + e.getMessage();
             }
         }
         return "Expected: observe <ID>";
+    }
+
+    private String redrawBoard() {
+        if (currentGame != null) {
+            // TODO: Update BoardPrinter.drawBoard to take in the actual ChessGame or ChessBoard
+            ui.BoardPrinter.drawBoard(isWhite);
+            return "";
+        }
+        return "No game data available to redraw.";
+    }
+
+    private String leaveGame() throws Exception {
+        ws.sendCommand(new UserGameCommand(UserGameCommand.CommandType.LEAVE, authData.authToken(), currentGameId));
+        state = State.LOGGED_IN;
+        currentGameId = -1;
+        currentGame = null;
+        return "You have left the game.";
+    }
+
+    private String resignGame() throws Exception {
+        ws.sendCommand(new UserGameCommand(UserGameCommand.CommandType.RESIGN, authData.authToken(), currentGameId));
+        return "Resignation request sent.";
+    }
+
+    private String makeMove(String[] params) throws Exception {
+        if (params.length >= 2) {
+            // Very basic move parsing (e.g., "move e2 e4")
+            String startPos = params[0].toLowerCase();
+            String endPos = params[1].toLowerCase();
+
+            try {
+                int startCol = startPos.charAt(0) - 'a' + 1;
+                int startRow = Character.getNumericValue(startPos.charAt(1));
+                int endCol = endPos.charAt(0) - 'a' + 1;
+                int endRow = Character.getNumericValue(endPos.charAt(1));
+
+                ChessPosition start = new ChessPosition(startRow, startCol);
+                ChessPosition end = new ChessPosition(endRow, endCol);
+
+                // TODO: Add support for pawn promotion pieces if necessary
+                ChessMove move = new ChessMove(start, end, null);
+
+                MakeMoveCommand command = new MakeMoveCommand(authData.authToken(), currentGameId, move);
+                ws.sendCommand(command);
+
+                return "Move sent to server...";
+            } catch (Exception e) {
+                return "Invalid move format. Try something like: 'move e2 e4'";
+            }
+        }
+        return "Expected: move <START> <END> (e.g., move e2 e4)";
+    }
+
+    @Override
+    public void notify(ServerMessage message) {
+        switch (message.getServerMessageType()) {
+            case NOTIFICATION -> {
+                NotificationMessage notification = (NotificationMessage) message;
+                System.out.println("\n[SERVER]: " + notification.getMessage());
+                printPrompt();
+            }
+            case ERROR -> {
+                ErrorMessage error = (ErrorMessage) message;
+                System.out.println("\n[ERROR]: " + error.getErrorMessage());
+                printPrompt();
+            }
+            case LOAD_GAME -> {
+                LoadGameMessage load = (LoadGameMessage) message;
+                this.currentGame = load.getGame().game();
+
+                System.out.println("\n");
+                redrawBoard();
+                printPrompt();
+            }
+        }
+    }
+
+    private void printPrompt() {
+        if (state == State.IN_GAME) {
+            System.out.print("\n[IN_GAME] >>> ");
+        } else {
+            System.out.print("\n[LOGGED_IN] >>> ");
+        }
     }
 
     private String helpPreLogin() {
@@ -192,6 +317,16 @@ public class ChessClient {
                 logout - when you are done
                 quit - playing chess
                 help - with possible commands
+                """;
+    }
+
+    private String helpInGame() {
+        return """
+                redraw - Redraw the chess board
+                move <START> <END> - Make a move (e.g., move e2 e4)
+                leave - Leave the game and return to the main menu
+                resign - Forfeit the game
+                help - Show this menu
                 """;
     }
 }
