@@ -47,7 +47,7 @@ public class ChessClient implements ServerMessageObserver {
 
     public String eval(String input) {
         try {
-            var tokens = input.split(" ");
+            var tokens = input.trim().split("\\s+");
             var cmd = (tokens.length > 0) ? tokens[0].toLowerCase() : "help";
             var params = Arrays.copyOfRange(tokens, 1, tokens.length);
 
