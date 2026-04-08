@@ -71,8 +71,72 @@ public class WebSocketHandler {
     }
 
     private void makeMove(String authToken, Integer gameID, chess.ChessMove move, Session session) {
-        // TODO: Implement make move logic
-        System.out.println("Make move command received!");
+        try {
+            AuthData authData = authDAO.getAuth(authToken);
+            GameData gameData = gameDAO.getGame(gameID);
+
+            if (authData == null) {
+                session.getRemote().sendString(gson.toJson(new ErrorMessage("Error: Bad auth token")));
+                return;
+            }
+            if (gameData == null) {
+                session.getRemote().sendString(gson.toJson(new ErrorMessage("Error: Bad game ID")));
+                return;
+            }
+
+            String username = authData.username();
+            chess.ChessGame game = gameData.game();
+
+            chess.ChessGame.TeamColor playerColor = null;
+            if (username.equals(gameData.whiteUsername())) {
+                playerColor = chess.ChessGame.TeamColor.WHITE;
+            } else if (username.equals(gameData.blackUsername())) {
+                playerColor = chess.ChessGame.TeamColor.BLACK;
+            }
+
+            if (playerColor == null) {
+                session.getRemote().sendString(gson.toJson(new ErrorMessage("Error: Observers cannot make moves")));
+                return;
+            }
+            if (game.getTeamTurn() != playerColor) {
+                session.getRemote().sendString(gson.toJson(new ErrorMessage("Error: It is not your turn")));
+                return;
+            }
+
+            // TODO: (Optional but required for full passoff) Add a check to see if the game is already over due to resignation or checkmate
+
+            try {
+                game.makeMove(move);
+            } catch (chess.InvalidMoveException e) {
+                session.getRemote().sendString(gson.toJson(new ErrorMessage("Error: Invalid move - " + e.getMessage())));
+                return;
+            }
+
+            gameDAO.updateGame(gameData);
+
+            LoadGameMessage loadMessage = new LoadGameMessage(gameData);
+            connections.broadcast(gameID, null, loadMessage);
+
+            String moveNotification = String.format("%s moved a piece.", username);
+            connections.broadcast(gameID, authToken, new NotificationMessage(moveNotification));
+
+            chess.ChessGame.TeamColor opponentColor = (playerColor == chess.ChessGame.TeamColor.WHITE) ?
+                    chess.ChessGame.TeamColor.BLACK : chess.ChessGame.TeamColor.WHITE;
+
+            if (game.isInCheckmate(opponentColor)) {
+                connections.broadcast(gameID, null, new NotificationMessage(opponentColor + " is in CHECKMATE!"));
+            } else if (game.isInCheck(opponentColor)) {
+                connections.broadcast(gameID, null, new NotificationMessage(opponentColor + " is in CHECK!"));
+            } else if (game.isInStalemate(opponentColor)) {
+                connections.broadcast(gameID, null, new NotificationMessage("Game is a STALEMATE!"));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            try {
+                session.getRemote().sendString(gson.toJson(new ErrorMessage("Error: Server error making move")));
+            } catch (Exception ignored) {}
+        }
     }
 
     private void leave(String authToken, Integer gameID, Session session) {
