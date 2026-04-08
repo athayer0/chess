@@ -19,6 +19,8 @@ public class ChessGame {
         teamColor = TeamColor.WHITE;
     }
 
+    private boolean gameOver = false;
+
     /**
      * @return Which team's turn it is
      */
@@ -196,6 +198,14 @@ public class ChessGame {
      */
     public ChessBoard getBoard() {
         return chessBoard;
+    }
+
+    public boolean isGameOver() {
+        return gameOver;
+    }
+
+    public void setGameOver(boolean gameOver) {
+        this.gameOver = gameOver;
     }
 
     @Override

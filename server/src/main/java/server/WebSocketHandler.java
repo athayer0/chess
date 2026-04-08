@@ -103,7 +103,10 @@ public class WebSocketHandler {
                 return;
             }
 
-            // TODO: (Optional but required for full passoff) Add a check to see if the game is already over due to resignation or checkmate
+            if (game.isGameOver()) {
+                session.getRemote().sendString(gson.toJson(new ErrorMessage("Error: You cannot make a move because the game is already over.")));
+                return;
+            }
 
             try {
                 game.makeMove(move);
@@ -140,10 +143,70 @@ public class WebSocketHandler {
     }
 
     private void leave(String authToken, Integer gameID, Session session) {
-        // TODO: Implement leave logic
+        try {
+            AuthData authData = authDAO.getAuth(authToken);
+            GameData gameData = gameDAO.getGame(gameID);
+
+            if (authData == null || gameData == null) {
+                session.getRemote().sendString(gson.toJson(new ErrorMessage("Error: Bad request")));
+                return;
+            }
+
+            String username = authData.username();
+
+            String newWhite = gameData.whiteUsername();
+            String newBlack = gameData.blackUsername();
+
+            if (username.equals(newWhite)) {
+                newWhite = null;
+            } else if (username.equals(newBlack)) {
+                newBlack = null;
+            }
+
+            GameData updatedGame = new GameData(gameID, newWhite, newBlack, gameData.gameName(), gameData.game());
+            gameDAO.updateGame(updatedGame);
+
+            connections.remove(gameID, authToken);
+
+            String message = String.format("%s has left the game.", username);
+            connections.broadcast(gameID, authToken, new NotificationMessage(message));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void resign(String authToken, Integer gameID, Session session) {
-        // TODO: Implement resign logic
+        try {
+            AuthData authData = authDAO.getAuth(authToken);
+            GameData gameData = gameDAO.getGame(gameID);
+
+            if (authData == null || gameData == null) {
+                session.getRemote().sendString(gson.toJson(new ErrorMessage("Error: Bad request")));
+                return;
+            }
+
+            String username = authData.username();
+
+            if (!username.equals(gameData.whiteUsername()) && !username.equals(gameData.blackUsername())) {
+                session.getRemote().sendString(gson.toJson(new ErrorMessage("Error: Observers cannot resign")));
+                return;
+            }
+
+            chess.ChessGame game = gameData.game();
+            if (game.isGameOver()) {
+                session.getRemote().sendString(gson.toJson(new ErrorMessage("Error: Game is already over")));
+                return;
+            }
+
+            game.setGameOver(true);
+            gameDAO.updateGame(gameData);
+
+            String message = String.format("%s has resigned. The game is over.", username);
+            connections.broadcast(gameID, null, new NotificationMessage(message));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
