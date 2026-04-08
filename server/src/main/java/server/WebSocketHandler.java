@@ -10,6 +10,7 @@ import websocket.commands.UserGameCommand;
 @WebSocket
 public class WebSocketHandler {
 
+    private final ConnectionManager connections = new ConnectionManager();
     private final Gson gson = new Gson();
 
     @OnWebSocketMessage
@@ -28,11 +29,26 @@ public class WebSocketHandler {
     }
 
     private void connect(String authToken, Integer gameID, Session session) {
-        // TODO: Validate auth token, check if user is in game
-        // TODO: Save connection so we can send messages back to them later
-        // TODO: Send LOAD_GAME back to the user
-        // TODO: Send NOTIFICATION to everyone else in the game
-        System.out.println("Connect command received!");
+        try {
+            // 1. Add the session to our connection manager
+            connections.add(gameID, authToken, session);
+
+            // TODO: Validate that the auth token is real and get the username from the DB
+            String username = "TestUser"; // Placeholder for now
+
+            // TODO: Fetch the actual GameData from the DB
+            // 2. Send a LOAD_GAME message back to the root client
+            // LoadGameMessage loadMessage = new LoadGameMessage(actualGameData);
+            // connections.sendMessage(gameID, authToken, loadMessage);
+
+            // 3. Broadcast a NOTIFICATION message to everyone else in the game
+            var message = String.format("%s joined the game", username);
+            var notification = new websocket.messages.NotificationMessage(message);
+            connections.broadcast(gameID, authToken, notification);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void makeMove(String authToken, Integer gameID, chess.ChessMove move, Session session) {
