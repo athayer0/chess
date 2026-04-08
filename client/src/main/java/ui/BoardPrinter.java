@@ -4,24 +4,31 @@ import chess.ChessBoard;
 import chess.ChessGame;
 import chess.ChessPiece;
 import chess.ChessPosition;
-
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 public class BoardPrinter {
     private static final int BOARD_SIZE_IN_SQUARES = 8;
     private static final String[] LETTERS = {"\u3000a ", "\u3000b ", "\u3000c ", "\u3000d ", "\u3000e ", "\u3000f ", "\u3000g ", "\u3000h "};
 
     public static void drawBoard(ChessGame game, boolean isWhitePerspective) {
+        drawBoard(game, isWhitePerspective, Set.of());
+    }
+
+    public static void drawBoard(ChessGame game, boolean isWhitePerspective, Collection<ChessPosition> highlights) {
         PrintStream out = new PrintStream(System.out, true, StandardCharsets.UTF_8);
 
         ChessBoard board = game.getBoard();
+        Set<ChessPosition> highlightSet = new HashSet<>(highlights);
 
         out.print(EscapeSequences.ERASE_SCREEN);
         out.println();
 
         drawHeaders(out, isWhitePerspective);
-        drawChessBoard(out, board, isWhitePerspective);
+        drawChessBoard(out, board, isWhitePerspective, highlightSet);
         drawHeaders(out, isWhitePerspective);
 
         out.print(EscapeSequences.RESET_BG_COLOR);
@@ -44,7 +51,8 @@ public class BoardPrinter {
         out.println();
     }
 
-    private static void drawChessBoard(PrintStream out, ChessBoard board, boolean isWhitePerspective) {
+    private static void drawChessBoard(PrintStream out, ChessBoard board, boolean isWhitePerspective,
+                                       Set<ChessPosition> highlights) {
         for (int boardRow = 1; boardRow <= BOARD_SIZE_IN_SQUARES; boardRow++) {
             int actualRow = isWhitePerspective ? (BOARD_SIZE_IN_SQUARES - boardRow + 1) : boardRow;
 
@@ -55,14 +63,16 @@ public class BoardPrinter {
             for (int boardCol = 1; boardCol <= BOARD_SIZE_IN_SQUARES; boardCol++) {
                 int actualCol = isWhitePerspective ? boardCol : (BOARD_SIZE_IN_SQUARES - boardCol + 1);
 
+                ChessPosition pos = new ChessPosition(actualRow, actualCol);
                 boolean isLightSquare = (actualRow + actualCol) % 2 != 0;
-                if (isLightSquare) {
-                    out.print(EscapeSequences.SET_BG_COLOR_WHITE);
+                boolean isHighlighted = highlights.contains(pos);
+
+                if (isHighlighted) {
+                    out.print(isLightSquare ? EscapeSequences.SET_BG_COLOR_GREEN : EscapeSequences.SET_BG_COLOR_DARK_GREEN);
                 } else {
-                    out.print(EscapeSequences.SET_BG_COLOR_BLACK);
+                    out.print(isLightSquare ? EscapeSequences.SET_BG_COLOR_WHITE : EscapeSequences.SET_BG_COLOR_BLACK);
                 }
 
-                ChessPosition pos = new ChessPosition(actualRow, actualCol);
                 ChessPiece piece = board.getPiece(pos);
                 printPiece(out, piece);
             }

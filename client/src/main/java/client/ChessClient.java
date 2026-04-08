@@ -14,8 +14,9 @@ import websocket.messages.ErrorMessage;
 import websocket.messages.LoadGameMessage;
 import websocket.messages.NotificationMessage;
 import websocket.messages.ServerMessage;
-
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 
 public class ChessClient implements ServerMessageObserver {
     private final ServerFacade server;
@@ -47,7 +48,7 @@ public class ChessClient implements ServerMessageObserver {
 
     public String eval(String input) {
         try {
-            var tokens = input.split(" ");
+            var tokens = input.trim().split("\\s+");
             var cmd = (tokens.length > 0) ? tokens[0].toLowerCase() : "help";
             var params = Arrays.copyOfRange(tokens, 1, tokens.length);
 
@@ -88,7 +89,7 @@ public class ChessClient implements ServerMessageObserver {
             case "leave" -> leaveGame();
             case "move" -> makeMove(params);
             case "resign" -> resignGame();
-            // case "highlight" -> highlightMoves(params); // Implement locally for extra credit / full spec
+            case "highlight" -> highlightMoves(params);
             default -> helpInGame();
         };
     }
@@ -266,6 +267,35 @@ public class ChessClient implements ServerMessageObserver {
         return "Expected: move <START> <END> (e.g., move e2 e4)";
     }
 
+    private String highlightMoves(String[] params) {
+        if (currentGame == null) {
+            return "No game data available.";
+        }
+        if (params.length < 1) {
+            return "Expected: highlight <POSITION> (e.g., highlight e2)";
+        }
+
+        String posStr = params[0].toLowerCase();
+        try {
+            int col = posStr.charAt(0) - 'a' + 1;
+            int row = Character.getNumericValue(posStr.charAt(1));
+
+            ChessPosition position = new ChessPosition(row, col);
+            Collection<ChessMove> validMoves = currentGame.validMoves(position);
+
+            Collection<ChessPosition> highlights = new ArrayList<>();
+            highlights.add(position);
+            for (ChessMove move : validMoves) {
+                highlights.add(move.getEndPosition());
+            }
+
+            ui.BoardPrinter.drawBoard(currentGame, isWhite, highlights);
+            return "";
+        } catch (Exception e) {
+            return "Invalid position. Try something like: 'highlight e2'";
+        }
+    }
+
     @Override
     public void notify(ServerMessage message) {
         switch (message.getServerMessageType()) {
@@ -323,6 +353,7 @@ public class ChessClient implements ServerMessageObserver {
         return """
                 redraw - Redraw the chess board
                 move <START> <END> - Make a move (e.g., move e2 e4)
+                highlight <POSITION> - Highlight legal moves for a piece (e.g., highlight e2)
                 leave - Leave the game and return to the main menu
                 resign - Forfeit the game
                 help - Show this menu
