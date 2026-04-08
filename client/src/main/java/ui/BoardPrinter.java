@@ -12,11 +12,10 @@ public class BoardPrinter {
     private static final int BOARD_SIZE_IN_SQUARES = 8;
     private static final String[] LETTERS = {"\u3000a ", "\u3000b ", "\u3000c ", "\u3000d ", "\u3000e ", "\u3000f ", "\u3000g ", "\u3000h "};
 
-    public static void drawBoard(boolean isWhitePerspective) {
+    public static void drawBoard(ChessGame game, boolean isWhitePerspective) {
         PrintStream out = new PrintStream(System.out, true, StandardCharsets.UTF_8);
 
-        ChessBoard board = new ChessBoard();
-        board.resetBoard();
+        ChessBoard board = game.getBoard();
 
         out.print(EscapeSequences.ERASE_SCREEN);
         out.println();

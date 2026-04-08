@@ -218,8 +218,7 @@ public class ChessClient implements ServerMessageObserver {
 
     private String redrawBoard() {
         if (currentGame != null) {
-            // TODO: Update BoardPrinter.drawBoard to take in the actual ChessGame or ChessBoard
-            ui.BoardPrinter.drawBoard(isWhite);
+            ui.BoardPrinter.drawBoard(currentGame, isWhite);
             return "";
         }
         return "No game data available to redraw.";
