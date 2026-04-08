@@ -6,13 +6,11 @@ import websocket.messages.ErrorMessage;
 import websocket.messages.LoadGameMessage;
 import websocket.messages.NotificationMessage;
 import websocket.messages.ServerMessage;
-
-import javax.websocket.*;
+import jakarta.websocket.*;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-// We extend Endpoint so this class can handle WebSocket lifecycle events
 public class WebSocketFacade extends Endpoint {
 
     Session session;
@@ -20,7 +18,6 @@ public class WebSocketFacade extends Endpoint {
 
     public WebSocketFacade(String serverUrl, ServerMessageObserver observer) throws Exception {
         try {
-            // Convert http://localhost:8080 to ws://localhost:8080
             serverUrl = serverUrl.replace("http", "ws");
             URI socketURI = new URI(serverUrl + "/ws");
             this.observer = observer;
@@ -28,15 +25,12 @@ public class WebSocketFacade extends Endpoint {
             WebSocketContainer container = ContainerProvider.getWebSocketContainer();
             this.session = container.connectToServer(this, socketURI);
 
-            // Set up the message handler to listen for incoming server messages
             this.session.addMessageHandler(new MessageHandler.Whole<String>() {
                 @Override
                 public void onMessage(String message) {
                     Gson gson = new Gson();
-                    // 1. Parse the base message to get the type
                     ServerMessage serverMessage = gson.fromJson(message, ServerMessage.class);
 
-                    // 2. Parse it again into the correct subclass so you have the specific data
                     switch (serverMessage.getServerMessageType()) {
                         case LOAD_GAME -> observer.notify(gson.fromJson(message, LoadGameMessage.class));
                         case NOTIFICATION -> observer.notify(gson.fromJson(message, NotificationMessage.class));
@@ -49,7 +43,6 @@ public class WebSocketFacade extends Endpoint {
         }
     }
 
-    // Required method for the Endpoint interface
     @Override
     public void onOpen(Session session, EndpointConfig endpointConfig) {
     }
