@@ -1,17 +1,31 @@
 package server;
 
 import com.google.gson.Gson;
+import dataaccess.AuthDAO;
+import dataaccess.GameDAO;
+import model.AuthData;
+import model.GameData;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
 import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import websocket.commands.MakeMoveCommand;
 import websocket.commands.UserGameCommand;
+import websocket.messages.ErrorMessage;
+import websocket.messages.LoadGameMessage;
+import websocket.messages.NotificationMessage;
 
 @WebSocket
 public class WebSocketHandler {
 
     private final ConnectionManager connections = new ConnectionManager();
     private final Gson gson = new Gson();
+    private final AuthDAO authDAO;
+    private final GameDAO gameDAO;
+
+    public WebSocketHandler(AuthDAO authDAO, GameDAO gameDAO) {
+        this.authDAO = authDAO;
+        this.gameDAO = gameDAO;
+    }
 
     @OnWebSocketMessage
     public void onMessage(Session session, String message) throws Exception {
@@ -30,20 +44,25 @@ public class WebSocketHandler {
 
     private void connect(String authToken, Integer gameID, Session session) {
         try {
-            // 1. Add the session to our connection manager
+            AuthData authData = authDAO.getAuth(authToken);
+            if (authData == null) {
+                session.getRemote().sendString(gson.toJson(new ErrorMessage("Error: bad auth token")));
+                return;
+            }
+
+            GameData gameData = gameDAO.getGame(gameID);
+            if (gameData == null) {
+                session.getRemote().sendString(gson.toJson(new ErrorMessage("Error: bad game ID")));
+                return;
+            }
+
             connections.add(gameID, authToken, session);
 
-            // TODO: Validate that the auth token is real and get the username from the DB
-            String username = "TestUser"; // Placeholder for now
+            LoadGameMessage loadMessage = new LoadGameMessage(gameData);
+            connections.sendMessage(gameID, authToken, loadMessage);
 
-            // TODO: Fetch the actual GameData from the DB
-            // 2. Send a LOAD_GAME message back to the root client
-            // LoadGameMessage loadMessage = new LoadGameMessage(actualGameData);
-            // connections.sendMessage(gameID, authToken, loadMessage);
-
-            // 3. Broadcast a NOTIFICATION message to everyone else in the game
-            var message = String.format("%s joined the game", username);
-            var notification = new websocket.messages.NotificationMessage(message);
+            String message = String.format("%s joined the game.", authData.username());
+            NotificationMessage notification = new NotificationMessage(message);
             connections.broadcast(gameID, authToken, notification);
 
         } catch (Exception e) {

@@ -31,11 +31,9 @@ public class Server {
             throw new RuntimeException("Unable to initialize DAOs", e);
         }
 
-        WebSocketHandler webSocketHandler = new WebSocketHandler();
+        WebSocketHandler webSocketHandler = new WebSocketHandler(authDAO, gameDAO);
         javalin.ws("/ws", ws -> {
-            ws.onMessage(ctx -> {
-                webSocketHandler.onMessage(ctx.session, ctx.message());
-            });
+            ws.onMessage(ctx -> webSocketHandler.onMessage(ctx.session, ctx.message()));
         });
 
         ClearService clearService = new ClearService(userDAO, authDAO, gameDAO);
