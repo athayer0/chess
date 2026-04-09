@@ -25,7 +25,6 @@ public class ChessClient implements ServerMessageObserver {
     private AuthData authData = null;
     private GameData[] cachedGames = null;
 
-    // WebSocket & Game State
     private WebSocketFacade ws;
     private int currentGameId = -1;
     private boolean isWhite = true;
@@ -234,37 +233,66 @@ public class ChessClient implements ServerMessageObserver {
     }
 
     private String resignGame() throws Exception {
-        ws.sendCommand(new UserGameCommand(UserGameCommand.CommandType.RESIGN, authData.authToken(), currentGameId));
-        return "Resignation request sent.";
+        System.out.print("Are you sure you want to resign? (yes/no): ");
+        java.util.Scanner scanner = new java.util.Scanner(System.in);
+        String response = scanner.nextLine().trim();
+
+        if (response.equalsIgnoreCase("yes") || response.equalsIgnoreCase("y")) {
+            ws.sendCommand(new UserGameCommand(UserGameCommand.CommandType.RESIGN, authData.authToken(), currentGameId));
+            return "Resignation request sent.";
+        }
+
+        return "Resignation cancelled.";
     }
 
     private String makeMove(String[] params) throws Exception {
-        if (params.length >= 2) {
-            // Very basic move parsing (e.g., "move e2 e4")
-            String startPos = params[0].toLowerCase();
-            String endPos = params[1].toLowerCase();
+        if (params.length < 2) {
+            return "Expected: move <START> <END> (e.g., move e2 e4)";
+        }
 
-            try {
-                int startCol = startPos.charAt(0) - 'a' + 1;
-                int startRow = Character.getNumericValue(startPos.charAt(1));
-                int endCol = endPos.charAt(0) - 'a' + 1;
-                int endRow = Character.getNumericValue(endPos.charAt(1));
+        if (params.length > 3) {
+            return "Too many arguments. Expected: move <START> <END> or move <START> <END> <PROMOTION>";
+        }
 
-                ChessPosition start = new ChessPosition(startRow, startCol);
-                ChessPosition end = new ChessPosition(endRow, endCol);
+        String startPos = params[0].toLowerCase();
+        String endPos = params[1].toLowerCase();
+        chess.ChessPiece.PieceType promotionPiece = null;
 
-                // TODO: Add support for pawn promotion pieces if necessary
-                ChessMove move = new ChessMove(start, end, null);
+        if (params.length == 3) {
+            switch (params[2].toLowerCase()) {
+                case "queen" -> promotionPiece = chess.ChessPiece.PieceType.QUEEN;
+                case "rook" -> promotionPiece = chess.ChessPiece.PieceType.ROOK;
+                case "bishop" -> promotionPiece = chess.ChessPiece.PieceType.BISHOP;
+                case "knight" -> promotionPiece = chess.ChessPiece.PieceType.KNIGHT;
+                default -> {
+                    return "Invalid promotion piece '" + params[2] + "'. Choose queen, rook, bishop, or knight.";
+                }
+            }
+        }
 
-                MakeMoveCommand command = new MakeMoveCommand(authData.authToken(), currentGameId, move);
-                ws.sendCommand(command);
+        try {
+            int startCol = startPos.charAt(0) - 'a' + 1;
+            int startRow = Character.getNumericValue(startPos.charAt(1));
+            int endCol = endPos.charAt(0) - 'a' + 1;
+            int endRow = Character.getNumericValue(endPos.charAt(1));
 
-                return "Move sent to server...";
-            } catch (Exception e) {
+            ChessPosition start = new ChessPosition(startRow, startCol);
+            ChessPosition end = new ChessPosition(endRow, endCol);
+
+            ChessMove move = new ChessMove(start, end, promotionPiece);
+
+            MakeMoveCommand command = new MakeMoveCommand(authData.authToken(), currentGameId, move);
+            ws.sendCommand(command);
+
+            return "";
+
+        } catch (Exception e) {
+            if (params.length == 3) {
+                return "Invalid move format. Try something like: 'move e7 e8 queen'";
+            } else {
                 return "Invalid move format. Try something like: 'move e2 e4'";
             }
         }
-        return "Expected: move <START> <END> (e.g., move e2 e4)";
     }
 
     private String highlightMoves(String[] params) {
@@ -301,19 +329,19 @@ public class ChessClient implements ServerMessageObserver {
         switch (message.getServerMessageType()) {
             case NOTIFICATION -> {
                 NotificationMessage notification = (NotificationMessage) message;
-                System.out.println("\n[SERVER]: " + notification.getMessage());
+                System.out.println("\n" + notification.getMessage());
                 printPrompt();
             }
             case ERROR -> {
                 ErrorMessage error = (ErrorMessage) message;
-                System.out.println("\n[ERROR]: " + error.getErrorMessage());
+                System.out.println("\n" + error.getErrorMessage());
                 printPrompt();
             }
             case LOAD_GAME -> {
                 LoadGameMessage load = (LoadGameMessage) message;
                 this.currentGame = load.getGame().game();
 
-                System.out.println("\n");
+                System.out.println();
                 redrawBoard();
                 printPrompt();
             }

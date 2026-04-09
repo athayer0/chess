@@ -33,6 +33,7 @@ public class Server {
 
         WebSocketHandler webSocketHandler = new WebSocketHandler(authDAO, gameDAO);
         javalin.ws("/ws", ws -> {
+            ws.onConnect(ctx -> ctx.session.setIdleTimeout(java.time.Duration.ofMinutes(60)));
             ws.onMessage(ctx -> webSocketHandler.onMessage(ctx.session, ctx.message()));
         });
 

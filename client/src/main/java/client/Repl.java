@@ -22,7 +22,7 @@ public class Repl {
             try {
                 result = client.eval(line);
 
-                if (!result.equals("quit")) {
+                if (!result.equals("quit") && !result.isEmpty()) {
                     System.out.println(result);
                 }
             } catch (Throwable e) {

@@ -29,6 +29,7 @@ public class WebSocketHandler {
 
     @OnWebSocketMessage
     public void onMessage(Session session, String message) throws Exception {
+        System.out.println("[SERVER] Received: " + message);
         UserGameCommand command = gson.fromJson(message, UserGameCommand.class);
 
         switch (command.getCommandType()) {
@@ -111,7 +112,7 @@ public class WebSocketHandler {
             try {
                 game.makeMove(move);
             } catch (chess.InvalidMoveException e) {
-                session.getRemote().sendString(gson.toJson(new ErrorMessage("Error: Invalid move - " + e.getMessage())));
+                session.getRemote().sendString(gson.toJson(new ErrorMessage("Error: " + e.getMessage())));
                 return;
             }
 
@@ -120,7 +121,12 @@ public class WebSocketHandler {
             LoadGameMessage loadMessage = new LoadGameMessage(gameData);
             connections.broadcast(gameID, null, loadMessage);
 
-            String moveNotification = String.format("%s moved a piece.", username);
+            String startPosStr = "" + (char)('a' + move.getStartPosition().getColumn() - 1) + move.getStartPosition().getRow();
+            String endPosStr = "" + (char)('a' + move.getEndPosition().getColumn() - 1) + move.getEndPosition().getRow();
+            String promotionStr = move.getPromotionPiece() != null ? " promoting to " + move.getPromotionPiece().name() : "";
+
+            String moveNotification = String.format("%s moved %s to %s%s.", username, startPosStr, endPosStr, promotionStr);
+            connections.broadcast(gameID, authToken, new NotificationMessage(moveNotification));
             connections.broadcast(gameID, authToken, new NotificationMessage(moveNotification));
 
             chess.ChessGame.TeamColor opponentColor = (playerColor == chess.ChessGame.TeamColor.WHITE) ?

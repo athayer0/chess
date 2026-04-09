@@ -24,17 +24,21 @@ public class WebSocketFacade extends Endpoint {
 
             WebSocketContainer container = ContainerProvider.getWebSocketContainer();
             this.session = container.connectToServer(this, socketURI);
+            this.session.setMaxIdleTimeout(0); // Disable idle timeout
 
             this.session.addMessageHandler(new MessageHandler.Whole<String>() {
                 @Override
                 public void onMessage(String message) {
-                    Gson gson = new Gson();
-                    ServerMessage serverMessage = gson.fromJson(message, ServerMessage.class);
-
-                    switch (serverMessage.getServerMessageType()) {
-                        case LOAD_GAME -> observer.notify(gson.fromJson(message, LoadGameMessage.class));
-                        case NOTIFICATION -> observer.notify(gson.fromJson(message, NotificationMessage.class));
-                        case ERROR -> observer.notify(gson.fromJson(message, ErrorMessage.class));
+                    try {
+                        Gson gson = new Gson();
+                        ServerMessage serverMessage = gson.fromJson(message, ServerMessage.class);
+                        switch (serverMessage.getServerMessageType()) {
+                            case LOAD_GAME -> observer.notify(gson.fromJson(message, LoadGameMessage.class));
+                            case NOTIFICATION -> observer.notify(gson.fromJson(message, NotificationMessage.class));
+                            case ERROR -> observer.notify(gson.fromJson(message, ErrorMessage.class));
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
                 }
             });
