@@ -284,7 +284,7 @@ public class ChessClient implements ServerMessageObserver {
             MakeMoveCommand command = new MakeMoveCommand(authData.authToken(), currentGameId, move);
             ws.sendCommand(command);
 
-            return "";
+            return "Move sent to server...";
 
         } catch (Exception e) {
             if (params.length == 3) {

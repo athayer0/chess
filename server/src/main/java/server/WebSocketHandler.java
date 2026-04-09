@@ -127,7 +127,6 @@ public class WebSocketHandler {
 
             String moveNotification = String.format("%s moved %s to %s%s.", username, startPosStr, endPosStr, promotionStr);
             connections.broadcast(gameID, authToken, new NotificationMessage(moveNotification));
-            connections.broadcast(gameID, authToken, new NotificationMessage(moveNotification));
 
             chess.ChessGame.TeamColor opponentColor = (playerColor == chess.ChessGame.TeamColor.WHITE) ?
                     chess.ChessGame.TeamColor.BLACK : chess.ChessGame.TeamColor.WHITE;

@@ -17,9 +17,9 @@ public class LoadGameMessage extends ServerMessage {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof LoadGameMessage that)) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) { return true; }
+        if (!(o instanceof LoadGameMessage that)) { return false; }
+        if (!super.equals(o)) { return false; }
         return Objects.equals(game, that.game);
     }
 

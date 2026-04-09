@@ -16,9 +16,9 @@ public class NotificationMessage extends ServerMessage {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof NotificationMessage that)) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) { return true; }
+        if (!(o instanceof NotificationMessage that)) { return false; }
+        if (!super.equals(o)) { return false; }
         return Objects.equals(message, that.message);
     }
 
