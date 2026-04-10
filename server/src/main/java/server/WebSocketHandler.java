@@ -131,10 +131,15 @@ public class WebSocketHandler {
             chess.ChessGame.TeamColor opponentColor = (playerColor == chess.ChessGame.TeamColor.WHITE) ?
                     chess.ChessGame.TeamColor.BLACK : chess.ChessGame.TeamColor.WHITE;
 
+            String opponentUsername = (opponentColor == chess.ChessGame.TeamColor.WHITE) ?
+                    gameData.whiteUsername() : gameData.blackUsername();
+
             if (game.isInCheckmate(opponentColor)) {
-                connections.broadcast(gameID, null, new NotificationMessage(opponentColor + " is in CHECKMATE!"));
+                String checkmateNotification = String.format("%s (%s) is in CHECKMATE!", opponentUsername, opponentColor);
+                connections.broadcast(gameID, null, new NotificationMessage(checkmateNotification));
             } else if (game.isInCheck(opponentColor)) {
-                connections.broadcast(gameID, null, new NotificationMessage(opponentColor + " is in CHECK!"));
+                String checkNotification = String.format("%s (%s) is in CHECK!", opponentUsername, opponentColor);
+                connections.broadcast(gameID, null, new NotificationMessage(checkNotification));
             } else if (game.isInStalemate(opponentColor)) {
                 connections.broadcast(gameID, null, new NotificationMessage("Game is a STALEMATE!"));
             }
